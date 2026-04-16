@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Demarque Immo">
+<meta name="theme-color" content="#080f1e">
+<link rel="manifest" href="manifest.json">
+<title>Demarque Immo</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Palette bleu nuit */
+  --bg:       #080f1e;
+  --bg2:      #0c1528;
+  --s1:       #0f1c35;
+  --s2:       #132040;
+  --s3:       #1a2a52;
+  --bd:       #1e2f52;
+  --bd2:      #243460;
+
+  /* Accents */
+  --gold:     #c8a96e;
+  --gold-dim: rgba(200,169,110,.1);
+  --blue:     #4a8fff;
+  --blue-dim: rgba(74,143,255,.1);
+  --white:    #f0f4ff;
+  --white2:   #b8c4e0;
+  --white3:   #6b7a9e;
+
+  /* States */
+  --ok:       #3dcf8e;
+  --ok-dim:   rgba(61,207,142,.08);
+  --warn:     #f0a500;
+  --warn-dim: rgba(240,165,0,.08);
+  --err:      #ef5350;
+  --err-dim:  rgba(239,83,80,.08);
+
+  /* Safe areas */
+  --st: env(safe-area-inset-top, 0px);
+  --sb: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); color: var(--white); font-family: 'Inter', sans-serif; overflow: hidden; touch-action: manipulation; }
+
+/* Subtle grid */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(74,143,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(74,143,255,.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none; z-index: 0;
+}
+/* Radial glow top */
+body::after {
+  content: '';
+  position: fixed;
+  top: -120px; left: 50%; transform: translateX(-50%);
+  width: 600px; height: 300px;
+  background: radial-gradient(ellipse, rgba(74,143,255,.12) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+
+.app { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100dvh; padding-top: var(--st); padding-bottom: var(--sb); }
+
+/* ═══ HEADER ═══ */
+.hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--bd);
+  background: rgba(8,15,30,.96);
+  backdrop-filter: blur(16px);
+  flex-shrink: 0;
+}
+
+.brand {
+  display: flex; align-items: center; gap: 11px;
+}
+
+.brand-logo {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--s3) 0%, var(--s2) 100%);
+  border: 1px solid var(--bd2);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.brand-logo::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(74,143,255,.15), transparent);
+}
+.brand-logo svg { position: relative; z-index: 1; }
+
+.brand-name {
+  display: flex; flex-direction: column; gap: 1px;
+}
+.brand-main {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: .5px;
+  color: var(--white);
+  line-height: 1;
+}
+.brand-main span { color: var(--gold); }
+.brand-sub {
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--white3);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.hdr-right { display: flex; align-items: center; gap: 8px; }
+
+.status-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--s1); border: 1px solid var(--bd);
+  border-radius: 20px; padding: 5px 12px;
+  font-size: 10px; color: var(--white3);
+  letter-spacing: .5px;
+}
+.dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--bd2); flex-shrink: 0; transition: all .3s;
+}
+.dot.run { background: var(--blue); box-shadow: 0 0 8px var(--blue); animation: pulse .8s infinite; }
+.dot.ok  { background: var(--ok);   box-shadow: 0 0 8px var(--ok);   animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ═══ NOTIFICATION BANNER ═══ */
+.notif-banner {
+  margin: 10px 14px 0;
+  background: var(--blue-dim);
+  border: 1px solid rgba(74,143,255,.25);
+  border-radius: 12px;
+  padding: 11px 13px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  flex-shrink: 0;
+}
+.notif-tx { font-size: 12px; color: var(--white2); line-height: 1.4; }
+.notif-tx strong { color: var(--blue); display: block; font-size: 12px; margin-bottom: 1px; }
+.notif-btn {
+  background: var(--blue); color: #fff; border: none;
+  border-radius: 8px; padding: 7px 13px;
+  font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600;
+  cursor: pointer; flex-shrink: 0; white-space: nowrap;
+}
+
+/* ═══ TIMER BAR ═══ */
+.tbar {
+  padding: 8px 18px; border-bottom: 1px solid var(--bd);
+  background: var(--bg2); flex-shrink: 0;
+  display: flex; align-items: center; gap: 12px;
+}
+.tbar-lbl { font-size: 10px; color: var(--white3); flex-shrink: 0; letter-spacing: .5px; }
+.tbar-track { flex: 1; height: 2px; background: var(--s3); border-radius: 1px; overflow: hidden; }
+.tbar-fill { height: 100%; background: var(--blue); border-radius: 1px; transition: width 1s linear; width: 0%; }
+.tbar-next { font-size: 11px; color: var(--blue); flex-shrink: 0; font-weight: 500; }
+
+/* ═══ SCROLL ═══ */
+.scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.scroll::-webkit-scrollbar { display: none; }
+
+/* ═══ SCREENS ═══ */
+.scr { display: none; padding: 16px 14px 120px; }
+.scr.on { display: block; }
+
+/* ═══ TYPOGRAPHY ═══ */
+.section-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px; font-weight: 600;
+  color: var(--white); letter-spacing: .3px;
+  margin-bottom: 14px;
+}
+.label {
+  font-size: 10px; font-weight: 500; letter-spacing: 2px;
+  color: var(--white3); text-transform: uppercase; margin-bottom: 8px;
+}
+
+/* ═══ CARDS / BOXES ═══ */
+.box {
+  background: var(--s1); border: 1px solid var(--bd);
+  border-radius: 16px; padding: 16px; margin-bottom: 12px;
+}
+.box-title {
+  font-size: 11px; font-weight: 600; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--white3); margin-bottom: 14px;
+}
+
+/* ═══ STATS ROW ═══ */
+.stats-row {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 8px;
+  margin: -16px -14px 16px; padding: 12px 14px;
+  border-bottom: 1px solid var(--bd);
+  background: var(--bg2);
+}
+.stat-box {
+  background: var(--s1); border: 1px solid var(--bd);
+  border-radius: 12px; padding: 10px 6px; text-align: center;
+}
+.stat-val {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 700; font-size: 22px; line-height: 1;
+}
+.stat-val.blue  { color: var(--blue); }
+.stat-val.gold  { color: var(--gold); }
+.stat-val.green { color: var(--ok); }
+.stat-val.warn  { color: var(--warn); }
+.stat-lbl { font-size: 9px; color: var(--white3); text-transform: uppercase; margin-top: 3px; letter-spacing: .5px; }
+
+/* ═══ FILTER TABS ═══ */
+.ftabs { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 2px; }
+.ftabs::-webkit-scrollbar { display: none; }
+.ftab {
+  padding: 6px 13px; border-radius: 20px;
+  font-size: 11px; font-weight: 500;
+  cursor: pointer; border: 1px solid var(--bd);
+  color: var(--white3); background: transparent;
+  transition: all .2s; white-space: nowrap; flex-shrink: 0;
+}
+.ftab.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+/* ═══ FORM ═══ */
+.fg { display: flex; flex-direction: column; gap: 5px; margin-bottom: 11px; }
+.fg:last-child { margin-bottom: 0; }
+label { font-size: 11px; color: var(--white3); font-weight: 400; }
+input, select, textarea {
+  background: var(--s2); border: 1px solid var(--bd);
+  border-radius: 10px; padding: 11px 13px;
+  color: var(--white); font-family: 'Inter', sans-serif;
+  font-size: 13px; outline: none; width: 100%;
+  -webkit-appearance: none; transition: border-color .2s;
+}
+input::placeholder, textarea::placeholder { color: var(--white3); opacity: .6; }
+input:focus, select:focus, textarea:focus { border-color: var(--blue); background: var(--s3); }
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7a9e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; padding-right: 30px;
+}
+textarea { resize: none; min-height: 115px; line-height: 1.6; font-size: 12px; }
+.r2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* TOGGLE */
+.trow { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--bd); }
+.trow:last-child { border: none; }
+.trow-lbl { font-size: 13px; color: var(--white2); font-weight: 400; }
+.trow-sub { font-size: 11px; color: var(--white3); margin-top: 1px; }
+.tog { width: 44px; height: 26px; background: var(--s3); border-radius: 20px; border: 1px solid var(--bd2); position: relative; cursor: pointer; transition: all .2s; flex-shrink: 0; }
+.tog.on { background: var(--blue); border-color: var(--blue); }
+.tog::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: transform .2s; box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+.tog.on::after { transform: translateX(18px); }
+
+/* SOURCES */
+.src-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 14px; }
+.src {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--s1); border: 1px solid var(--bd);
+  border-radius: 10px; padding: 10px 12px;
+  cursor: pointer; transition: all .15s; user-select: none;
+}
+.src.on { border-color: var(--blue); background: var(--blue-dim); }
+.src-chk {
+  width: 16px; height: 16px; border: 1.5px solid var(--bd2);
+  border-radius: 4px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; transition: all .2s; color: #fff;
+}
+.src.on .src-chk { background: var(--blue); border-color: var(--blue); }
+.src-nm { font-size: 12px; color: var(--white2); font-weight: 400; }
+
+/* BUTTONS */
+.btn-primary {
+  width: 100%; padding: 15px;
+  background: linear-gradient(135deg, var(--blue) 0%, #2566cc 100%);
+  color: #fff; border: none; border-radius: 13px;
+  font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px;
+  cursor: pointer; letter-spacing: .3px;
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  transition: all .2s; margin-bottom: 10px;
+  box-shadow: 0 4px 20px rgba(74,143,255,.25);
+}
+.btn-primary:active { transform: scale(.98); box-shadow: 0 2px 10px rgba(74,143,255,.2); }
+.btn-primary:disabled { background: var(--s3); color: var(--white3); box-shadow: none; cursor: not-allowed; }
+
+.btn-danger {
+  width: 100%; padding: 13px;
+  background: transparent; color: var(--err);
+  border: 1px solid var(--err); border-radius: 13px;
+  font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13px;
+  cursor: pointer; transition: all .2s; display: none; margin-bottom: 10px;
+}
+.btn-danger:active { background: var(--err-dim); }
+
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold), #a07840);
+  color: #fff; border: none; border-radius: 10px;
+  padding: 9px 16px; font-size: 12px; font-family: 'Inter', sans-serif;
+  font-weight: 600; cursor: pointer; transition: all .2s;
+  box-shadow: 0 3px 12px rgba(200,169,110,.2);
+}
+.btn-gold:active { transform: scale(.97); }
+
+/* ═══ ANNONCE CARDS ═══ */
+.acard {
+  background: var(--s1); border: 1px solid var(--bd);
+  border-left: 3px solid var(--bd2);
+  border-radius: 16px; margin-bottom: 10px; overflow: hidden;
+  transition: border-color .2s; animation: fadeUp .3s ease;
+}
+.acard.kept  { border-left-color: var(--ok); }
+.acard.ignored { border-left-color: var(--bd2); opacity: .42; }
+.acard.msent { border-left-color: var(--blue); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+.atop { padding: 14px 14px 10px; cursor: pointer; -webkit-user-select: none; user-select: none; }
+.ameta-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.asrc { font-size: 10px; color: var(--white3); letter-spacing: 1px; text-transform: uppercase; }
+.asrc-row { display: flex; align-items: center; gap: 6px; }
+.anew { background: var(--blue); color: #fff; border-radius: 4px; padding: 2px 7px; font-size: 9px; font-weight: 600; letter-spacing: .5px; }
+.atime { font-size: 10px; color: var(--white3); }
+.atitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px; font-weight: 600; color: var(--white);
+  margin-bottom: 3px; line-height: 1.3;
+}
+.aprice { font-size: 13px; color: var(--gold); font-weight: 500; }
+.aprice-info { font-size: 11px; color: var(--white3); margin-left: 6px; }
+
+.adet { padding: 0 14px 13px; border-top: 1px solid var(--bd); display: none; }
+.adet.open { display: block; }
+.ameta-row { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; color: var(--white3); padding-top: 12px; margin-bottom: 10px; }
+.ameta-row span { display: flex; align-items: center; gap: 3px; }
+.adesc { font-size: 12px; color: var(--white2); line-height: 1.7; margin-bottom: 12px; }
+
+/* Contact tags */
+.ctags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 13px; }
+.ctag { display: flex; align-items: center; gap: 4px; font-size: 11px; padding: 5px 11px; border-radius: 20px; border: 1px solid var(--bd); color: var(--white3); background: var(--s2); }
+.ctag.email { border-color: rgba(74,143,255,.3); color: var(--blue); background: var(--blue-dim); }
+.ctag.phone { border-color: rgba(61,207,142,.3); color: var(--ok); background: var(--ok-dim); }
+
+/* Action buttons */
+.aacts { display: grid; gap: 7px; padding: 0 14px 13px; }
+.aact {
+  padding: 11px; border-radius: 11px; font-size: 12px;
+  font-family: 'Inter', sans-serif; font-weight: 500;
+  cursor: pointer; border: 1px solid var(--bd); background: var(--s2);
+  color: var(--white2); text-align: center; transition: all .2s;
+}
+.aact:active { transform: scale(.97); }
+.aact.keep { border-color: rgba(61,207,142,.3); color: var(--ok); background: var(--ok-dim); }
+.aact.keep.on { background: var(--ok); color: #fff; border-color: var(--ok); }
+.aact.ignore { border-color: rgba(239,83,80,.25); color: var(--err); background: var(--err-dim); }
+.aact.ignore.on { background: var(--err); color: #fff; border-color: var(--err); }
+.aact.queue { border-color: rgba(74,143,255,.3); color: var(--blue); background: var(--blue-dim); }
+.aact.queue.on { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+/* ═══ MESSAGE CARDS ═══ */
+.mcard {
+  background: var(--s1); border: 1px solid var(--bd);
+  border-left: 3px solid var(--bd2);
+  border-radius: 16px; padding: 16px; margin-bottom: 10px;
+  animation: fadeUp .3s ease;
+}
+.mcard.pending { border-left-color: var(--warn); }
+.mcard.sent    { border-left-color: var(--ok); }
+
+.mtop { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.mname { font-family: 'Cormorant Garamond', serif; font-size: 17px; font-weight: 600; color: var(--white); }
+.mdate { font-size: 10px; color: var(--white3); margin-top: 2px; flex-shrink: 0; }
+.maddr { font-size: 12px; color: var(--white3); margin-bottom: 10px; }
+.mprev {
+  font-size: 11px; color: var(--white2); line-height: 1.7;
+  background: var(--s2); border: 1px solid var(--bd);
+  border-radius: 10px; padding: 11px 13px;
+  margin-bottom: 12px; white-space: pre-wrap;
+}
+.mfoot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mbadge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; padding: 4px 10px; border-radius: 20px;
+  border: 1px solid var(--bd); color: var(--white3); background: var(--s2);
+}
+.mbadge.ok { border-color: rgba(61,207,142,.3); color: var(--ok); background: var(--ok-dim); }
+.mbadge.pend { border-color: rgba(240,165,0,.3); color: var(--warn); background: var(--warn-dim); }
+.msend {
+  padding: 9px 16px; border-radius: 10px;
+  font-size: 12px; font-family: 'Inter', sans-serif; font-weight: 500;
+  cursor: pointer; border: 1px solid rgba(74,143,255,.35);
+  background: var(--blue-dim); color: var(--blue);
+  transition: all .2s;
+}
+.msend:active { background: var(--blue); color: #fff; }
+.msend.done { border-color: rgba(61,207,142,.3); color: var(--ok); background: var(--ok-dim); cursor: default; }
+
+/* ═══ PROGRESS ═══ */
+.pi { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--bd); }
+.pi:last-child { border: none; }
+.pi-site { font-size: 12px; color: var(--white2); width: 95px; flex-shrink: 0; }
+.pi-bar { flex: 1; height: 3px; background: var(--s3); border-radius: 2px; overflow: hidden; }
+.pi-fill { height: 100%; background: var(--blue); border-radius: 2px; transition: width .5s ease; width: 0%; }
+.pi-cnt { font-size: 11px; color: var(--white3); width: 46px; text-align: right; flex-shrink: 0; }
+
+/* ═══ TERMINAL ═══ */
+.term {
+  background: #040810; border: 1px solid var(--bd);
+  border-radius: 13px; padding: 13px;
+  font-family: 'Inter', monospace; font-size: 11px;
+  line-height: 1.8; height: 260px; overflow-y: auto;
+  -webkit-overflow-scrolling: touch; color: var(--white3);
+}
+.term::-webkit-scrollbar { display: none; }
+.ll { display: flex; gap: 10px; }
+.lt { color: var(--bd2); flex-shrink: 0; font-size: 10px; }
+.li { color: var(--blue); }
+.ls { color: var(--ok); }
+.lw { color: var(--warn); }
+.lf { color: var(--gold); }
+
+/* ═══ EMPTY STATE ═══ */
+.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 20px; color: var(--white3); gap: 10px; text-align: center; }
+.empty-ico { font-size: 40px; opacity: .25; }
+.empty-t { font-family: 'Cormorant Garamond', serif; font-size: 17px; color: var(--white2); }
+.empty-s { font-size: 11px; color: var(--white3); }
+
+/* ═══ TOAST ═══ */
+.toast {
+  position: fixed; bottom: 88px; left: 12px; right: 12px;
+  background: var(--s2); border: 1px solid var(--bd);
+  border-radius: 13px; padding: 13px 16px; font-size: 13px;
+  z-index: 600; transform: translateY(20px); opacity: 0;
+  transition: all .3s cubic-bezier(.34,1.56,.64,1);
+  font-weight: 400; color: var(--white);
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.ok   { border-color: rgba(61,207,142,.35); }
+.toast.warn { border-color: rgba(240,165,0,.35); }
+.toast.err  { border-color: rgba(239,83,80,.35); }
+
+/* ═══ BOTTOM NAV ═══ */
+.nav {
+  display: flex; border-top: 1px solid var(--bd);
+  background: rgba(8,15,30,.97); backdrop-filter: blur(16px);
+  flex-shrink: 0;
+}
+.ni {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 10px 4px; cursor: pointer; user-select: none;
+  position: relative; gap: 3px; transition: all .15s;
+}
+.ni-ico { font-size: 20px; transition: transform .2s; }
+.ni-lbl { font-size: 9px; color: var(--white3); letter-spacing: .5px; text-transform: uppercase; transition: color .2s; }
+.ni.on .ni-lbl { color: var(--blue); }
+.ni.on .ni-ico { transform: scale(1.1); }
+/* Active indicator */
+.ni.on::before {
+  content: '';
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 28px; height: 2px;
+  background: var(--blue);
+  border-radius: 0 0 2px 2px;
+}
+.nbadge {
+  position: absolute; top: 6px; right: 50%;
+  transform: translateX(9px);
+  background: var(--blue); color: #fff;
+  border-radius: 10px; padding: 1px 5px;
+  font-size: 9px; font-weight: 600;
+  min-width: 16px; text-align: center; display: none;
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M9 2L2 7.5V16h5v-4h4v4h5V7.5L9 2z" fill="none" stroke="#4a8fff" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M9 2L2 7.5" stroke="#c8a96e" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M9 2L16 7.5" stroke="#c8a96e" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="brand-name">
+        <div class="brand-main">DEMARQUE <span>IMMO</span></div>
+        <div class="brand-sub">Pige immobilière</div>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <div class="status-pill">
+        <div class="dot" id="sDot"></div>
+        <span id="sTxt">PRÊT</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIF BANNER -->
+  <div class="notif-banner" id="notifBanner" style="display:none">
+    <div class="notif-tx"><strong>🔔 Activer les notifications</strong>Alerte dès que de nouvelles annonces arrivent</div>
+    <button class="notif-btn" onclick="askNotif()">Activer</button>
+  </div>
+
+  <!-- TIMER BAR -->
+  <div class="tbar" id="timerBar" style="display:none">
+    <div class="tbar-lbl">PROCHAIN SCAN</div>
+    <div class="tbar-track"><div class="tbar-fill" id="timerFill"></div></div>
+    <div class="tbar-next" id="timerNext">--:--</div>
+  </div>
+
+  <!-- SCROLL -->
+  <div class="scroll" id="SCROLL">
+
+    <!-- ░░ ANNONCES ░░ -->
+    <div class="scr on" id="scr-triage">
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-val blue" id="sTotal">0</div><div class="stat-lbl">Total</div></div>
+        <div class="stat-box"><div class="stat-val green" id="sKept">0</div><div class="stat-lbl">Gardés</div></div>
+        <div class="stat-box"><div class="stat-val warn" id="sPend">0</div><div class="stat-lbl">En attente</div></div>
+        <div class="stat-box"><div class="stat-val gold" id="sSent">0</div><div class="stat-lbl">Envoyés</div></div>
+      </div>
+      <div class="ftabs" id="ftabs">
+        <div class="ftab on" onclick="setFilter('all',this)">Tous <span id="cAll">0</span></div>
+        <div class="ftab" onclick="setFilter('new',this)">Nouveaux <span id="cNew">0</span></div>
+        <div class="ftab" onclick="setFilter('kept',this)">Gardés <span id="cKept">0</span></div>
+        <div class="ftab" onclick="setFilter('ignored',this)">Ignorés <span id="cIgn">0</span></div>
+      </div>
+      <div class="empty" id="emptyTriage">
+        <div class="empty-ico">🏡</div>
+        <div class="empty-t">Aucune annonce</div>
+        <div class="empty-s">Lance la pige depuis l'onglet Config</div>
+      </div>
+      <div id="triGrid"></div>
+    </div>
+
+    <!-- ░░ MESSAGERIE ░░ -->
+    <div class="scr" id="scr-msg">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="section-title" style="margin:0">Messages</div>
+        <button class="btn-gold" onclick="sendAll()">Tout envoyer</button>
+      </div>
+      <div class="ftabs" id="mftabs">
+        <div class="ftab on" onclick="setMsgFilter('all',this)">Tous <span id="mAll">0</span></div>
+        <div class="ftab" onclick="setMsgFilter('pending',this)">En attente <span id="mPend">0</span></div>
+        <div class="ftab" onclick="setMsgFilter('sent',this)">Envoyés <span id="mSent">0</span></div>
+      </div>
+      <div class="empty" id="emptyMsg">
+        <div class="empty-ico">✉️</div>
+        <div class="empty-t">Aucun message</div>
+        <div class="empty-s">Garde des annonces pour générer tes messages</div>
+      </div>
+      <div id="msgGrid"></div>
+    </div>
+
+    <!-- ░░ CONFIG ░░ -->
+    <div class="scr" id="scr-config">
+      <div class="section-title">Configuration</div>
+
+      <div class="label">Sources actives</div>
+      <div class="src-grid">
+        <div class="src on" onclick="toggleSrc(this)"><div class="src-chk">✓</div><span class="src-nm">LeBonCoin</span></div>
+        <div class="src on" onclick="toggleSrc(this)"><div class="src-chk">✓</div><span class="src-nm">PAP.fr</span></div>
+        <div class="src on" onclick="toggleSrc(this)"><div class="src-chk">✓</div><span class="src-nm">Particuliers</span></div>
+        <div class="src on" onclick="toggleSrc(this)"><div class="src-chk">✓</div><span class="src-nm">SeLoger</span></div>
+        <div class="src on" onclick="toggleSrc(this)"><div class="src-chk">✓</div><span class="src-nm">Bien'ici</span></div>
+        <div class="src on" onclick="toggleSrc(this)"><div class="src-chk">✓</div><span class="src-nm">Figaro Immo</span></div>
+        <div class="src on" onclick="toggleSrc(this)"><div class="src-chk">✓</div><span class="src-nm">Logic-Immo</span></div>
+        <div class="src" onclick="toggleSrc(this)"><div class="src-chk"></div><span class="src-nm">Explorimmo</span></div>
+      </div>
+
+      <div class="box">
+        <div class="box-title">Zone géographique</div>
+        <div class="fg"><label>Département</label><select><option>Maine-et-Loire (49)</option></select></div>
+        <div class="fg"><label>Secteur prioritaire</label>
+          <select><option>Angers + communes Loire</option><option>Angers uniquement</option><option>Levée Loire → Saumur</option><option>Saumur et alentours</option></select>
+        </div>
+        <div class="fg"><label>Rayon (km)</label><input type="number" value="30" min="5" max="80"></div>
+      </div>
+
+      <div class="box">
+        <div class="box-title">Filtres annonce</div>
+        <div class="fg"><label>Type de bien</label><select><option>Tous types</option><option>Maison</option><option>Appartement</option><option>Terrain</option></select></div>
+        <div class="fg"><label>Transaction</label><select><option>Vente</option><option>Location</option><option>Vente &amp; Location</option></select></div>
+        <div class="r2">
+          <div class="fg"><label>Prix min (€)</label><input type="number" placeholder="0"></div>
+          <div class="fg"><label>Prix max (€)</label><input type="number" placeholder="Sans limite"></div>
+        </div>
+        <div class="r2">
+          <div class="fg"><label>Surface min (m²)</label><input type="number" placeholder="0"></div>
+          <div class="fg"><label>Pièces min</label><input type="number" placeholder="1"></div>
+        </div>
+        <div class="fg"><label>Ancienneté annonce</label>
+          <select><option>24 heures</option><option selected>48 heures</option><option>7 jours</option></select>
+        </div>
+      </div>
+
+      <div class="box">
+        <div class="box-title">Scan automatique</div>
+        <div class="trow"><div><div class="trow-lbl">Activer le scan auto</div></div><div class="tog on" id="togAuto" onclick="this.classList.toggle('on');saveCfg()"></div></div>
+        <div class="fg" style="margin-top:13px"><label>Fréquence de scan</label>
+          <select id="cfgFreq" onchange="saveCfg()">
+            <option value="1">Toutes les heures</option>
+            <option value="2">Toutes les 2 heures</option>
+            <option value="6">Toutes les 6 heures</option>
+            <option value="12">Toutes les 12 heures</option>
+            <option value="24" selected>Toutes les 24 heures</option>
+          </select>
+        </div>
+        <div class="trow"><div class="trow-lbl">Notifications nouvelles annonces</div><div class="tog on" id="togNotif" onclick="this.classList.toggle('on')"></div></div>
+        <div class="trow"><div class="trow-lbl">Particuliers seulement</div><div class="tog on" id="togPart" onclick="this.classList.toggle('on')"></div></div>
+      </div>
+
+      <div class="box">
+        <div class="box-title">Ton message personnalisé</div>
+        <div style="background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:10px 12px;margin-bottom:13px;font-size:11px;color:var(--white3);line-height:1.7">
+          Variables : <span style="color:var(--blue)">[PRENOM]</span> <span style="color:var(--blue)">[NOM]</span> <span style="color:var(--blue)">[BIEN]</span> <span style="color:var(--blue)">[VILLE]</span> <span style="color:var(--blue)">[TEL]</span>
+        </div>
+        <div class="fg"><label>Ton nom / agence</label><input type="text" id="cfgNom" placeholder="Jean Dupont — Demarque Immo" oninput="saveCfg()"></div>
+        <div class="fg"><label>Email expéditeur</label><input type="email" id="cfgEmail" placeholder="toi@email.com" oninput="saveCfg()"></div>
+        <div class="fg"><label>Téléphone</label><input type="tel" id="cfgTel" placeholder="06 XX XX XX XX" oninput="saveCfg()"></div>
+        <div class="fg"><label>Texte du message</label>
+          <textarea id="cfgMsg" oninput="saveCfg()">Bonjour [PRENOM],
+
+Je suis [NOM], agent immobilier spécialisé sur Angers et le Val de Loire.
+
+J'ai remarqué votre annonce pour [BIEN] à [VILLE] et je serais ravi(e) de vous rencontrer pour évaluer votre bien sans engagement et vous accompagner dans votre projet.
+
+Je reste disponible à tout moment.
+📞 [TEL]
+
+Cordialement,
+[NOM]</textarea>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="launchBtn" onclick="startScan()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M3 2l9 5-9 5V2z"/></svg>
+        LANCER LA PIGE
+      </button>
+      <button class="btn-danger" id="stopBtn" onclick="stopScan()">■ ARRÊTER LA PIGE</button>
+    </div>
+
+    <!-- ░░ SUIVI ░░ -->
+    <div class="scr" id="scr-suivi">
+      <div class="section-title">Suivi en temps réel</div>
+      <div class="box" id="progList" style="padding-bottom:0">
+        <div class="empty" style="padding:22px 0">
+          <div class="empty-ico" style="font-size:28px">⏳</div>
+          <div class="empty-t" style="font-size:15px">En attente de lancement</div>
+        </div>
+      </div>
+      <div style="height:14px"></div>
+      <div class="label">Journal d'activité</div>
+      <div class="term" id="TERM">
+        <div class="ll"><span class="lt">--:--:--</span><span style="color:var(--white3)">Système prêt. En attente de lancement...</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="nav">
+    <div class="ni on" id="ni-triage" onclick="goScr('triage',this)">
+      <div class="ni-ico">🏡</div><div class="ni-lbl">Annonces</div>
+      <div class="nbadge" id="nb-triage">0</div>
+    </div>
+    <div class="ni" id="ni-msg" onclick="goScr('msg',this)">
+      <div class="ni-ico">✉️</div><div class="ni-lbl">Messages</div>
+      <div class="nbadge" id="nb-msg">0</div>
+    </div>
+    <div class="ni" id="ni-config" onclick="goScr('config',this)">
+      <div class="ni-ico">⚙️</div><div class="ni-lbl">Config</div>
+    </div>
+    <div class="ni" id="ni-suivi" onclick="goScr('suivi',this)">
+      <div class="ni-ico">📊</div><div class="ni-lbl">Suivi</div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="TOAST"></div>
+
+<script>
+// ═══════════════════════════════════════
+// DONNÉES FAKE
+// ═══════════════════════════════════════
+const DB=[
+  {id:1,src:'LeBonCoin',title:'Maison 4p — Saint-Barthélemy-d\'Anjou',price:'285 000 €',surface:'98 m²',rooms:4,city:'Saint-Barthélemy-d\'Anjou',email:'michel.bernard@free.fr',phone:'06 12 34 56 78',type:'Maison',desc:'Belle maison de plain-pied avec garage double, jardin arboré 450m², cuisine équipée récente, 3 chambres + bureau. DPE C. Toutes commodités à 5 min.',prenom:'Michel'},
+  {id:2,src:'PAP.fr',title:'Appartement T3 — Angers centre',price:'175 000 €',surface:'68 m²',rooms:3,city:'Angers',email:'sophie.m49@gmail.com',phone:null,type:'Appartement',desc:'T3 en étage élevé, double exposition est/ouest, parquet ancien, cave et parking inclus. Copropriété très saine. Quartier Saint-Laud.',prenom:'Sophie'},
+  {id:3,src:'PAP.fr',title:'Maison avec jardin — Bouchemaine',price:'320 000 €',surface:'115 m²',rooms:5,city:'Bouchemaine',email:null,phone:'07 89 01 23 45',type:'Maison',desc:'Maison familiale 5 pièces avec grand jardin 800m² en bord de Loire. Véranda 20m², garage, belle vue dégagée.',prenom:'Isabelle'},
+  {id:4,src:'LeBonCoin',title:'Studio meublé — Angers université',price:'650 €/mois',surface:'25 m²',rooms:1,city:'Angers',email:'loc.studio49@outlook.fr',phone:'06 55 44 33 22',type:'Appartement',desc:'Studio entièrement meublé et équipé, refait à neuf 2023. Proche CHU et facultés. Bail étudiant. Charges incluses + fibre.',prenom:'Karim'},
+  {id:5,src:'SeLoger',title:'Maison contemporaine — Les Ponts-de-Cé',price:'298 000 €',surface:'105 m²',rooms:4,city:'Les Ponts-de-Cé',email:'pierre.v@free.fr',phone:'06 77 88 99 00',type:'Maison',desc:'Construction 2018, normes RT 2012, 4 chambres, terrasse couverte 20m², double garage. Quartier calme et résidentiel, école 200m.',prenom:'Pierre'},
+  {id:6,src:"Bien'ici",title:'T2 refait à neuf — Angers La Roseraie',price:'148 000 €',surface:'48 m²',rooms:2,city:'Angers',email:'marielaure49@gmail.com',phone:null,type:'Appartement',desc:'Appartement entièrement rénové 2023, salle de bain italienne, cuisine ouverte sur séjour, balcon plein sud. Charges faibles.',prenom:'Marie-Laure'},
+  {id:7,src:'PAP.fr',title:'Terrain constructible 800m² — Mûrs-Érigné',price:'89 000 €',surface:'800 m²',rooms:0,city:'Mûrs-Érigné',email:'robert.terrain@wanadoo.fr',phone:'06 11 22 33 44',type:'Terrain',desc:'Terrain plat viabilisé, toutes connexions en limite. CU positif. Constructible maison jusqu\'à 150m². Vue dégagée.',prenom:'Robert'},
+  {id:8,src:'Figaro Immo',title:'Maison en tuffeau — Saumur',price:'245 000 €',surface:'88 m²',rooms:4,city:'Saumur',email:null,phone:'06 98 76 54 32',type:'Maison',desc:'Belle maison de ville en tuffeau authentique, 4 pièces sur 2 niveaux, cave voûtée, cour intérieure privative. Cœur de Saumur.',prenom:'Hélène'},
+  {id:9,src:'Logic-Immo',title:'Grand T4 terrasse — Trélazé',price:'189 000 €',surface:'82 m²',rooms:4,city:'Trélazé',email:'francois.d@sfr.fr',phone:'07 12 34 56 78',type:'Appartement',desc:'Dernier étage, grande terrasse 25m² plein sud, 4 pièces dont 3 chambres. Parking privatif et cave. Vue dégagée sur parc.',prenom:'François'},
+  {id:10,src:'PAP.fr',title:'Longère à rénover — Gennes-Val-de-Loire',price:'165 000 €',surface:'130 m²',rooms:6,city:'Gennes-Val-de-Loire',email:'annie.gennes@gmail.com',phone:'06 33 44 55 66',type:'Maison',desc:'Longère en pierre de Loire 6 pièces, grand potentiel. Jardin 1200m², 2 dépendances. À 20 min de Saumur.',prenom:'Annie'},
+];
+const SITES=['LeBonCoin','PAP.fr','SeLoger',"Bien'ici",'Particuliers','Figaro Immo','Logic-Immo'];
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let anns=[], cfg={nom:'',email:'',tel:'',msg:'',freq:24,auto:true};
+let activeF='all', activeMF='all';
+let isRun=false, stopF=false, timers=[], timerIv=null, countdown=0;
+
+const el=id=>document.getElementById(id);
+const v=id=>el(id)?el(id).value:'';
+const sv=(id,val)=>{if(el(id))el(id).value=val||''};
+
+function load(){
+  try{const d=localStorage.getItem('demarque1');if(d){const p=JSON.parse(d);anns=p.anns||[];cfg={...cfg,...p.cfg};applyCfg();}}catch(e){}
+  renderAll();checkNotifBanner();
+}
+function save(){try{localStorage.setItem('demarque1',JSON.stringify({anns,cfg}));}catch(e){}}
+function saveCfg(){
+  cfg.nom=v('cfgNom');cfg.email=v('cfgEmail');cfg.tel=v('cfgTel');
+  cfg.msg=v('cfgMsg');cfg.freq=parseInt(v('cfgFreq'));
+  cfg.auto=el('togAuto').classList.contains('on');
+  save();
+}
+function applyCfg(){sv('cfgNom',cfg.nom);sv('cfgEmail',cfg.email);sv('cfgTel',cfg.tel);if(cfg.msg)sv('cfgMsg',cfg.msg);if(cfg.freq&&el('cfgFreq'))el('cfgFreq').value=cfg.freq;}
+
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
+function goScr(name,e){
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  el('scr-'+name).classList.add('on');
+  (e||el('ni-'+name)).classList.add('on');
+  el('SCROLL').scrollTop=0;
+}
+function toggleSrc(e){e.classList.toggle('on');e.querySelector('.src-chk').textContent=e.classList.contains('on')?'✓':'';}
+
+// ═══════════════════════════════════════
+// FILTERS
+// ═══════════════════════════════════════
+function setFilter(f,e){activeF=f;document.querySelectorAll('#ftabs .ftab').forEach(t=>t.classList.remove('on'));e.classList.add('on');renderTriage();}
+function setMsgFilter(f,e){activeMF=f;document.querySelectorAll('#mftabs .ftab').forEach(t=>t.classList.remove('on'));e.classList.add('on');renderMsg();}
+
+// ═══════════════════════════════════════
+// RENDER TRIAGE
+// ═══════════════════════════════════════
+function renderTriage(){
+  const grid=el('triGrid'),emp=el('emptyTriage');
+  grid.innerHTML='';
+  const n=anns.length,nN=anns.filter(a=>a.status==='new').length;
+  const nK=anns.filter(a=>a.status==='kept').length,nI=anns.filter(a=>a.status==='ignored').length;
+  const nP=anns.filter(a=>a.status==='kept'&&a.msgStatus==='pending').length;
+  const nS=anns.filter(a=>a.msgStatus==='sent').length;
+  el('sTotal').textContent=n;el('sKept').textContent=nK;el('sPend').textContent=nP;el('sSent').textContent=nS;
+  el('cAll').textContent=n;el('cNew').textContent=nN;el('cKept').textContent=nK;el('cIgn').textContent=nI;
+  const nb=el('nb-triage');nb.textContent=nN;nb.style.display=nN>0?'block':'none';
+  let list=anns;
+  if(activeF==='new')list=anns.filter(a=>a.status==='new');
+  else if(activeF==='kept')list=anns.filter(a=>a.status==='kept');
+  else if(activeF==='ignored')list=anns.filter(a=>a.status==='ignored');
+  if(!list.length){emp.style.display='flex';return;}
+  emp.style.display='none';
+  [...list].reverse().forEach(a=>grid.appendChild(mkCard(a)));
+}
+
+function mkCard(a){
+  const d=a.data,div=document.createElement('div');
+  const kept=a.status==='kept',ign=a.status==='ignored',sent=a.msgStatus==='sent';
+  div.className='acard'+(kept?' kept':'')+(ign?' ignored':'')+(sent?' msent':'');
+  div.id='ac-'+a.id;
+  let acts='';
+  if(!sent){
+    if(!ign) acts+=`<div class="aact keep${kept?' on':''}" onclick="setStatus(${a.id},'${kept?'new':'kept'}')">✓ ${kept?'Annuler':'Garder'}</div>`;
+    if(!kept) acts+=`<div class="aact ignore${ign?' on':''}" onclick="setStatus(${a.id},'${ign?'new':'ignored'}')">✕ ${ign?'Annuler':'Ignorer'}</div>`;
+    if(kept) acts+=`<div class="aact queue${a.msgStatus==='pending'?' on':''}" onclick="queueMsg(${a.id})">${a.msgStatus==='pending'?'✓ En file d\'envoi':'📤 Ajouter à la file'}</div>`;
+  } else {
+    acts=`<div class="aact queue on" style="pointer-events:none">✓ Message envoyé</div>`;
+  }
+  div.innerHTML=`
+    <div class="atop" onclick="toggleDet(${a.id})">
+      <div class="ameta-top">
+        <div class="asrc-row">
+          <span class="asrc">${d.src}</span>
+          ${a.status==='new'?'<span class="anew">NOUVEAU</span>':''}
+        </div>
+        <span class="atime">${ago(a.addedAt)}</span>
+      </div>
+      <div class="atitle">${d.title}</div>
+      <div class="aprice">${d.price}<span class="aprice-info">${d.surface?'· '+d.surface:''} ${d.rooms>0?'· '+d.rooms+'p':''}</span></div>
+    </div>
+    <div class="adet" id="det-${a.id}">
+      <div class="ameta-row">
+        ${d.surface?`<span>📐 ${d.surface}</span>`:''}
+        ${d.rooms>0?`<span>🚪 ${d.rooms} pièces</span>`:''}
+        <span>📍 ${d.city}</span>
+        <span style="color:var(--ok)">👤 Particulier</span>
+      </div>
+      <div class="adesc">${d.desc}</div>
+      <div class="ctags">
+        ${d.email?`<div class="ctag email">✉ ${d.email}</div>`:''}
+        ${d.phone?`<div class="ctag phone">📞 ${d.phone}</div>`:''}
+      </div>
+      <div class="aacts">${acts}</div>
+    </div>`;
+  return div;
+}
+
+function toggleDet(id){const d=el('det-'+id);if(d)d.classList.toggle('open');}
+
+function setStatus(id,st){
+  const a=anns.find(x=>x.id===id);if(!a)return;
+  a.status=st;
+  if(st==='kept'){if(a.msgStatus==='none')a.msgStatus='pending';toast('✓ Annonce gardée','ok');updateMsgBadge();}
+  else if(st==='ignored')toast('Annonce ignorée','warn');
+  else{if(a.msgStatus==='pending')a.msgStatus='none';toast('Sélection annulée','warn');}
+  save();renderAll();
+}
+
+function queueMsg(id){
+  const a=anns.find(x=>x.id===id);if(!a)return;
+  if(a.msgStatus==='pending'){toast('Déjà en file d\'envoi','warn');return;}
+  a.msgStatus='pending';save();renderAll();updateMsgBadge();
+  toast('📤 Ajouté à la file d\'envoi','ok');
+}
+
+// ═══════════════════════════════════════
+// RENDER MESSAGERIE
+// ═══════════════════════════════════════
+function renderMsg(){
+  const grid=el('msgGrid'),emp=el('emptyMsg');
+  grid.innerHTML='';
+  const kept=anns.filter(a=>a.status==='kept');
+  let list=kept;
+  if(activeMF==='pending')list=kept.filter(a=>a.msgStatus==='pending');
+  else if(activeMF==='sent')list=kept.filter(a=>a.msgStatus==='sent');
+  el('mAll').textContent=kept.length;
+  el('mPend').textContent=kept.filter(a=>a.msgStatus==='pending').length;
+  el('mSent').textContent=kept.filter(a=>a.msgStatus==='sent').length;
+  if(!list.length){emp.style.display='flex';return;}
+  emp.style.display='none';
+  [...list].reverse().forEach(a=>{
+    const d=a.data,sent=a.msgStatus==='sent',div=document.createElement('div');
+    div.className='mcard '+(sent?'sent':'pending');div.id='mc-'+a.id;
+    div.innerHTML=`
+      <div class="mtop">
+        <div><div class="mname">${d.prenom||'Propriétaire'}</div><div class="maddr">📍 ${d.title}</div></div>
+        <div class="mdate">${ago(a.addedAt)}</div>
+      </div>
+      <div class="ctags" style="margin-bottom:10px">
+        ${d.email?`<div class="ctag email">✉ ${d.email}</div>`:''}
+        ${d.phone?`<div class="ctag phone">📞 ${d.phone}</div>`:''}
+      </div>
+      <div class="mprev">${buildMsg(d)}</div>
+      <div class="mfoot">
+        <div class="mbadge ${sent?'ok':'pend'}">${sent?'✓ Envoyé':'⏳ En attente'}</div>
+        ${sent?`<div style="font-size:10px;color:var(--white3)">${a.sentAt?new Date(a.sentAt).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):''}</div>`:`<button class="msend" onclick="sendMsg(${a.id})">Envoyer →</button>`}
+      </div>`;
+    grid.appendChild(div);
+  });
+}
+
+function buildMsg(d){
+  const nom=v('cfgNom')||cfg.nom||'[Votre nom]',tel=v('cfgTel')||cfg.tel||'[Votre tél]';
+  const tpl=v('cfgMsg')||cfg.msg||'Bonjour [PRENOM],\n\nCordialement,\n[NOM]\n[TEL]';
+  return tpl.replace(/\[PRENOM\]/g,d.prenom||'Madame/Monsieur').replace(/\[NOM\]/g,nom).replace(/\[BIEN\]/g,d.title).replace(/\[VILLE\]/g,d.city).replace(/\[TEL\]/g,tel);
+}
+
+function sendMsg(id){
+  const a=anns.find(x=>x.id===id);if(!a||a.msgStatus==='sent')return;
+  a.msgStatus='sent';a.sentAt=Date.now();
+  save();renderAll();updateMsgBadge();
+  toast(`✓ Message envoyé à ${a.data.prenom||'Propriétaire'}`, 'ok');
+  addLog(`📧 Message → ${a.data.city} (${a.data.src})`,'ls');
+}
+
+function sendAll(){
+  const pend=anns.filter(a=>a.status==='kept'&&a.msgStatus==='pending');
+  if(!pend.length){toast('Aucun message en attente','warn');return;}
+  pend.forEach(a=>{a.msgStatus='sent';a.sentAt=Date.now();});
+  save();renderAll();updateMsgBadge();
+  toast(`✓ ${pend.length} message${pend.length>1?'s':''} envoyé${pend.length>1?'s':''}`, 'ok');
+}
+
+function updateMsgBadge(){
+  const p=anns.filter(a=>a.status==='kept'&&a.msgStatus==='pending').length;
+  const nb=el('nb-msg');nb.textContent=p;nb.style.display=p>0?'block':'none';
+}
+
+function renderAll(){renderTriage();renderMsg();updateMsgBadge();}
+
+// ═══════════════════════════════════════
+// SCAN
+// ═══════════════════════════════════════
+function startScan(){
+  if(isRun)return;
+  isRun=true;stopF=false;
+  el('TERM').innerHTML='';
+  el('launchBtn').disabled=true;el('stopBtn').style.display='block';
+  el('sDot').className='dot run';el('sTxt').textContent='EN COURS';
+  buildProg();
+  addLog('🚀 Démarrage de la pige Demarque Immo...','li');
+  addLog('📍 Zone : Maine-et-Loire (49)','li');
+  addLog('👤 Filtre : Particuliers uniquement','li');
+  goScr('suivi',el('ni-suivi'));
+
+  let delay=0,newCnt=0;
+  const sData=[
+    {site:'LeBonCoin',items:[DB[0],DB[3]]},
+    {site:'PAP.fr',items:[DB[1],DB[2],DB[6],DB[9]]},
+    {site:'SeLoger',items:[DB[4]]},
+    {site:"Bien'ici",items:[DB[5]]},
+    {site:'Particuliers',items:[]},
+    {site:'Figaro Immo',items:[DB[7]]},
+    {site:'Logic-Immo',items:[DB[8]]},
+  ];
+
+  sData.forEach(s=>{
+    timers.push(setTimeout(()=>{if(stopF)return;addLog(`🌐 Connexion à ${s.site}...`,'li');},delay));delay+=480;
+    timers.push(setTimeout(()=>{if(stopF)return;addLog(`🔎 Scan ${s.site}...`,'li');updProg(s.site,30,0);},delay));delay+=650;
+    s.items.forEach((item,ai)=>{
+      const td=delay+ai*550;
+      timers.push(setTimeout(()=>{
+        if(stopF)return;
+        addLog(`📌 [${s.site}] ${item.title}`,'lf');
+        if(item.phone||item.email)addLog(`   └─ ${item.email||item.phone}`,'ls');
+        updProg(s.site,30+(ai+1)*18,ai+1);
+        if(!anns.find(a=>a.id===item.id)){anns.push({id:item.id,data:item,status:'new',msgStatus:'none',addedAt:Date.now()});newCnt++;renderAll();}
+      },td));
+      delay=td+120;
+    });
+    delay+=180;
+    timers.push(setTimeout(()=>{if(stopF)return;updProg(s.site,100,s.items.length);addLog(`✓ ${s.site} — ${s.items.length} ann.`,s.items.length>0?'ls':'li');},delay));delay+=320;
+  });
+
+  timers.push(setTimeout(()=>{
+    if(stopF)return;
+    addLog(`🎯 Scan terminé — ${newCnt} nouvelles annonces trouvées`,'lf');
+    save();finishScan(newCnt);
+    if(el('togAuto').classList.contains('on'))scheduleNext();
+  },delay+350));
+}
+
+function stopScan(){
+  stopF=true;timers.forEach(clearTimeout);timers=[];
+  addLog('⛔ Pige arrêtée.','lw');finishScan(0);
+}
+
+function finishScan(n){
+  isRun=false;
+  el('launchBtn').disabled=false;el('stopBtn').style.display='none';
+  el('sDot').className='dot ok';el('sTxt').textContent='TERMINÉ';
+  toast(`Scan terminé — ${anns.length} annonces`,'ok');
+  if(n>0)sendNotif(n);
+}
+
+function scheduleNext(){
+  const freq=parseInt(v('cfgFreq')||24)*3600000;
+  clearInterval(timerIv);countdown=freq;
+  el('timerBar').style.display='flex';
+  timerIv=setInterval(()=>{
+    countdown-=1000;
+    if(countdown<=0){clearInterval(timerIv);el('timerBar').style.display='none';startScan();return;}
+    el('timerFill').style.width=(100-countdown/freq*100)+'%';
+    const m=Math.floor(countdown/60000),s=Math.floor((countdown%60000)/1000);
+    el('timerNext').textContent=m>59?Math.floor(m/60)+'h'+(m%60)+'m':(m+'m'+String(s).padStart(2,'0')+'s');
+  },1000);
+}
+
+// PROGRESS
+function buildProg(){
+  const pl=el('progList');pl.innerHTML='';
+  SITES.forEach(site=>{
+    const k=site.replace(/[^a-z]/gi,'_'),div=document.createElement('div');
+    div.className='pi';
+    div.innerHTML=`<div class="pi-site">${site}</div><div class="pi-bar"><div class="pi-fill" id="pf-${k}"></div></div><div class="pi-cnt" id="pc-${k}">—</div>`;
+    pl.appendChild(div);
+  });
+}
+function updProg(site,pct,cnt){
+  const k=site.replace(/[^a-z]/gi,'_');
+  const pf=el('pf-'+k),pc=el('pc-'+k);
+  if(pf)pf.style.width=pct+'%';if(pc)pc.textContent=cnt+' ann.';
+}
+
+// LOG
+function addLog(msg,cls='li'){
+  const t=el('TERM'),now=new Date().toTimeString().slice(0,8);
+  const line=document.createElement('div');line.className='ll';
+  line.innerHTML=`<span class="lt">${now}</span><span class="${cls}">${msg}</span>`;
+  t.appendChild(line);t.scrollTop=t.scrollHeight;
+}
+
+// NOTIFICATIONS
+function checkNotifBanner(){
+  if('Notification' in window&&Notification.permission==='default')el('notifBanner').style.display='flex';
+}
+function askNotif(){
+  if('Notification' in window){
+    Notification.requestPermission().then(p=>{
+      el('notifBanner').style.display='none';
+      if(p==='granted')toast('🔔 Notifications activées','ok');
+    });
+  }
+}
+function sendNotif(n){
+  if(!el('togNotif').classList.contains('on'))return;
+  if('Notification' in window&&Notification.permission==='granted'){
+    new Notification('Demarque Immo 🏠',{
+      body:`${n} nouvelle${n>1?'s':''} annonce${n>1?'s':''} de particuliers !`,
+    });
+  }
+}
+
+// TOAST
+function toast(msg,type='ok'){
+  const t=el('TOAST');t.textContent=msg;t.className='toast '+type+' show';
+  setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+// UTILS
+function ago(ts){
+  if(!ts)return '';const d=Date.now()-ts;
+  if(d<60000)return 'À l\'instant';
+  if(d<3600000)return Math.floor(d/60000)+'min';
+  if(d<86400000)return Math.floor(d/3600000)+'h';
+  return Math.floor(d/86400000)+'j';
+}
+
+// INIT
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+window.addEventListener('DOMContentLoaded',load);
+</script>
+</body>
+</html>
